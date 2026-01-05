@@ -124,9 +124,102 @@ src/
 
 ---
 
-## Phase 2: Base de Données Supabase ⏳ EN ATTENTE
+## Phase 2: Base de Données Supabase ✅ TERMINÉ
 
-*À commencer après validation de la Phase 1*
+**Date de complétion:** 5 janvier 2025
+
+### Tâches accomplies
+
+#### 2.1 Création de la table `diagnostics` ✅
+- ✅ Migration SQL appliquée via MCP Supabase
+- ✅ Schéma complet créé:
+  - `id` (UUID, PRIMARY KEY, auto-generated)
+  - `created_at`, `updated_at` (TIMESTAMPTZ avec trigger auto-update)
+  - `questionnaire_version` (TEXT, default 'v1.0')
+  - `answers` (JSONB) - toutes les réponses utilisateur
+  - `score_total` (INTEGER, CHECK 0-100)
+  - `score_breakdown` (JSONB) - {exposure, predisposition, aggravating, damage}
+  - `risk_level` (TEXT, CHECK faible|modere|eleve|tres_eleve)
+  - `recommendations` (JSONB) - Survey/Shield + actions prioritaires
+  - `user_identity` (JSONB, nullable)
+  - `user_agent` (TEXT), `ip_address` (INET), `completion_time_seconds` (INTEGER)
+- ✅ Indexes créés:
+  - `idx_diagnostics_created_at` (DESC)
+  - `idx_diagnostics_risk_level`
+  - `idx_diagnostics_version`
+- ✅ Trigger `update_updated_at_column` pour auto-update de `updated_at`
+- ✅ Commentaires sur table et colonnes
+
+#### 2.2 Configuration RLS (Row Level Security) ✅
+- ✅ RLS activé sur table `diagnostics`
+- ✅ Policy "Allow anonymous INSERT":
+  - Rôle `anon` peut faire INSERT
+  - Permet aux utilisateurs de soumettre diagnostics sans auth
+- ✅ Policy "Deny SELECT for anon":
+  - Rôle `anon` ne peut pas faire SELECT
+  - Empêche lecture des diagnostics des autres utilisateurs
+- ✅ Policy "Allow full access for authenticated admins":
+  - Rôle `authenticated` a accès complet (pour analytics futures)
+- ✅ Permissions accordées:
+  - `GRANT INSERT ON diagnostics TO anon`
+  - `GRANT ALL ON diagnostics TO authenticated`
+  - `GRANT ALL ON diagnostics TO service_role`
+
+#### 2.3 Client Supabase créé ✅
+**Fichier:** `src/utils/supabase.ts`
+
+- ✅ Client Supabase initialisé:
+  ```typescript
+  export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  ```
+- ✅ Vérification variables d'environnement (throw error si manquantes)
+- ✅ Types TypeScript complets:
+  - `ScoreBreakdown`
+  - `RiskLevel`
+  - `Recommendations`
+  - `DiagnosticSubmission`
+  - `DiagnosticSubmissionResult`
+- ✅ Fonction `submitDiagnostic()`:
+  - Accepte `DiagnosticSubmission`
+  - INSERT dans table `diagnostics`
+  - Retourne `{success, error?, id?}`
+  - Gestion d'erreurs complète
+- ✅ Fonction `testSupabaseConnection()`:
+  - Teste la connexion à Supabase
+  - Retourne `boolean`
+
+#### 2.4 Vérifications ✅
+- ✅ Table `diagnostics` visible dans Supabase Dashboard
+- ✅ RLS enabled confirmé
+- ✅ 0 rows (table vide, prête pour insertions)
+- ✅ Build TypeScript réussit sans erreur
+- ✅ Bundle size: 53.20 kB (gzipped) - inchangé
+
+### État de la base de données
+
+**Table `diagnostics` créée:**
+- Schéma: public.diagnostics
+- RLS: Activé ✅
+- Rows: 0 (vide)
+- Columns: 12 champs
+- Primary Key: id (UUID)
+- Indexes: 3 (created_at, risk_level, version)
+- Comment: "RGA diagnostic results - independent from other TerraStab tables"
+
+**Policies actives:**
+1. "Allow anonymous INSERT on diagnostics" - INSERT pour anon ✅
+2. "Deny SELECT for anon users" - Pas de SELECT pour anon ✅
+3. "Allow full access for authenticated admins" - Full access pour authenticated ✅
+
+### Prochaine étape
+
+**Phase 3: Moteur de Questionnaire** (3-4 jours)
+- Créer types TypeScript (engine/types.ts)
+- Configurer 27 questions (engine/config.ts) ⭐ CRITIQUE
+- Implémenter logique visibilité (engine/visibility.ts)
+- Implémenter algorithme scoring (engine/scoring.ts)
+- Implémenter interprétation risque (engine/riskTier.ts)
+- Implémenter recommandations TerraStab (engine/recommendations.ts)
 
 ---
 
